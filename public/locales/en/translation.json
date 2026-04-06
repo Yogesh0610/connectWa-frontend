@@ -49,6 +49,12 @@
     "payment_successful": "Payment successful! Subscription is active.",
     "payment_failed": "Payment failed",
     "something_went_wrong": "Something went wrong",
-    "standard": "Standard"
+    "standard": "Standard",
+    "ad_leads": "Ad Leads",
+    "ads_manager": "Ads Manager"
+  },
+  "sidbar": {
+    "ad_leads": "Ad Leads",
+    "ads_manager": "Ads Manager"
   }
 }

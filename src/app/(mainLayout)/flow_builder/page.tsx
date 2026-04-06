@@ -1,11 +1,13 @@
-import FlowList from '@/src/components/bot-flow/FlowList';
+import { ReactFlowProvider } from "@xyflow/react";
+import FlowList from "@/src/components/bot-flow/FlowList";
+import { ErrorBoundary } from "@/src/components/common/ErrorBoundary";
 
-const page = () => {
+export default function Page() {
   return (
-    <div>
-      <FlowList />
-    </div>
+    <ErrorBoundary>
+      <ReactFlowProvider>
+        <FlowList />
+      </ReactFlowProvider>
+    </ErrorBoundary>
   );
 }
-
-export default page

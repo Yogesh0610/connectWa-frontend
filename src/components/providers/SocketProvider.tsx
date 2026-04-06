@@ -4,12 +4,13 @@ import { socket } from "@/src/services/socket-setup";
 import { SocketProviderProps } from "@/src/types/components";
 import { useSocketHandler } from "@/src/utils/hooks/useSocketHandler";
 import { useSession } from "next-auth/react";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 const SocketProvider = ({ children }: SocketProviderProps) => {
   const { data: session, status } = useSession();
   const isAuthenticated = status === "authenticated";
   const userId = session?.user?.id;
+  const [socketError, setSocketError] = useState(false);
 
   useSocketHandler();
 
@@ -20,7 +21,7 @@ const SocketProvider = ({ children }: SocketProviderProps) => {
       }
 
       const handleConnect = () => {
-        console.log("Socket connected");
+        setSocketError(false);
         socket.emit(SOCKET.Emitters.Join_Room, userId);
         socket.emit(SOCKET.Emitters.Set_Online);
         socket.emit(SOCKET.Emitters.Request_Status_Update);
@@ -28,10 +29,11 @@ const SocketProvider = ({ children }: SocketProviderProps) => {
 
       const handleConnectError = (error: Error) => {
         console.error("Socket connection failed:", error);
+        setSocketError(true);
       };
 
-      const handleDisconnect = (reason: string) => {
-        console.log("Socket disconnected:", reason);
+      const handleDisconnect = (_reason: string) => {
+        // intentionally silent
       };
 
       socket.on("connect", handleConnect);
@@ -54,7 +56,19 @@ const SocketProvider = ({ children }: SocketProviderProps) => {
     }
   }, [isAuthenticated, userId]);
 
-  return <>{children}</>;
+  return (
+    <>
+      {socketError && (
+        <div className="fixed top-0 left-0 right-0 z-[9999] bg-amber-500 text-white text-xs text-center py-1 px-4">
+          Real-time connection lost — some updates may be delayed.{" "}
+          <button onClick={() => { setSocketError(false); socket.connect(); }} className="underline font-semibold">
+            Reconnect
+          </button>
+        </div>
+      )}
+      {children}
+    </>
+  );
 };
 
 export default SocketProvider;

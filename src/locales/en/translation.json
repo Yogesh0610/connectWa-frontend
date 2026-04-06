@@ -299,7 +299,9 @@
     "chat_theme": "Chat Theme",
     "teams": "Teams",
     "ai_calling": "AI Call Agent",
-    "form_builder": "Form Builder"
+    "form_builder": "Form Builder",
+    "ads_manager": "Ads Manager",
+    "ad_leads": "Ad Leads"
   },
   "dashboard": {
     "title": "Dashboard",

@@ -1,5 +1,5 @@
 import { MenuItem } from "@/src/types/components";
-import { BookImage, BookKey, BotMessageSquare, Cable, Clock, Columns, Contact, Form, HatGlasses, Image, Import, LayoutDashboard, LayoutTemplate, List, ListOrdered, MailCheck, MapPin, Megaphone, MessageCircle, MousePointer2, Phone, PhoneCall, Plug, Receipt, Settings, Tags, Type, Users, Webhook, Workflow, Wrench, Zap } from "lucide-react";
+import { BarChart3, BellOff, BookImage, BookKey, Bot, BotMessageSquare, Cable, Clock, Columns, Contact, Database, Form, HatGlasses, HeadphonesIcon, Image, Import, LayoutDashboard, LayoutTemplate, List, ListOrdered, Mail, MailCheck, MapPin, Megaphone, MessageCircle, MousePointer2, Phone, PhoneCall, Plug, Receipt, RefreshCcw, Settings, Sheet, Tags, Target, Type, Users, Webhook, Workflow, Wrench, Zap } from "lucide-react";
 
 export const MENUITEMS: MenuItem[] = [
   {
@@ -151,13 +151,14 @@ export const MENUITEMS: MenuItem[] = [
     order: 9,
     permission: "view.subscriptions",
   },
-  // {
-  //   icon: <FileText size={20} />,
-  //   label: "sidebar.invoices",
-  //   path: "/invoices",
-  //   section: "sidebar.my_subscription",
-  //   order: 10,
-  // },
+  {
+    icon: <Target size={20} />,
+    label: "sidebar.ad_leads",
+    path: "/ad-leads",
+    section: "sidebar.marketing",
+    order: 14,
+    permission: "view.ad_leads",
+  },
   {
     icon: <Megaphone size={20} />,
     label: "sidebar.campaign",
@@ -219,9 +220,18 @@ export const MENUITEMS: MenuItem[] = [
     order: 18,
     permission: "view.api_key",
   },
+  {
+    icon: <BarChart3 size={20} />,
+    label: "sidebar.ads_manager",
+    path: "/ads",
+    section: "sidebar.marketing",
+    order: 15,
+    permission: "view.campaigns",
+  },
 ];
 
 export const NODETEMPLATES = [
+  // ── Trigger ───────────────────────────────────────────
   {
     id: "trigger",
     label: "Start Trigger",
@@ -230,6 +240,8 @@ export const NODETEMPLATES = [
     color: "#f97316",
     category: "Trigger",
   },
+
+  // ── Basic Messages ────────────────────────────────────
   {
     id: "text_message",
     label: "Text Message",
@@ -246,14 +258,24 @@ export const NODETEMPLATES = [
     color: "#10b981",
     category: "BASIC MESSAGES",
   },
-  // {
-  //   id: "call_to_action",
-  //   label: "Call To Action",
-  //   description: "Message with a CTA link button",
-  //   icon: <Zap />,
-  //   color: "#10b981",
-  //   category: "BASIC MESSAGES",
-  // },
+  {
+    id: "call_to_action",
+    label: "Call To Action",
+    description: "Message with a CTA link button",
+    icon: <Zap />,
+    color: "#10b981",
+    category: "BASIC MESSAGES",
+  },
+  {
+    id: "wa_template",
+    label: "Send WA Template",
+    description: "Send an approved WhatsApp message template",
+    icon: <LayoutTemplate />,
+    color: "#10b981",
+    category: "BASIC MESSAGES",
+  },
+
+  // ── Interactive Content ───────────────────────────────
   {
     id: "list_message",
     label: "List Message",
@@ -278,6 +300,8 @@ export const NODETEMPLATES = [
     color: "#8b5cf6",
     category: "INTERACTIVE CONTENT",
   },
+
+  // ── Advanced Features ─────────────────────────────────
   {
     id: "delay",
     label: "Wait / Delay",
@@ -285,5 +309,119 @@ export const NODETEMPLATES = [
     icon: <Clock />,
     color: "#f59e0b",
     category: "ADVANCED FEATURES",
+  },
+  {
+    id: "condition",
+    label: "Condition / Branch",
+    description: "Branch the flow based on conditions",
+    icon: <Columns />,
+    color: "#f59e0b",
+    category: "ADVANCED FEATURES",
+  },
+  {
+    id: "jump_to_flow",
+    label: "Jump To Flow",
+    description: "Jump to another automation flow",
+    icon: <LayoutTemplate />,
+    color: "#f59e0b",
+    category: "ADVANCED FEATURES",
+  },
+  {
+    id: "disable_auto_reply",
+    label: "Disable Auto-Reply",
+    description: "Temporarily pause auto-reply for this contact",
+    icon: <BellOff />,
+    color: "#64748b",
+    category: "ADVANCED FEATURES",
+  },
+  {
+    id: "reset_session",
+    label: "Reset Session",
+    description: "Clear all saved variables for this contact",
+    icon: <RefreshCcw />,
+    color: "#ef4444",
+    category: "ADVANCED FEATURES",
+  },
+
+  // ── User Interaction ──────────────────────────────────
+  {
+    id: "user_input",
+    label: "Ask User / Capture Input",
+    description: "Ask a question and capture user input",
+    icon: <BookKey />,
+    color: "#3b82f6",
+    category: "USER INTERACTION",
+  },
+
+  // ── Data Management ───────────────────────────────────
+  {
+    id: "set_variable",
+    label: "Set Variable",
+    description: "Set or update a variable's value",
+    icon: <BookImage />,
+    color: "#3b82f6",
+    category: "DATA MANAGEMENT",
+  },
+  {
+    id: "api_webhook",
+    label: "API / Webhook",
+    description: "Make an API call or trigger a webhook",
+    icon: <Cable />,
+    color: "#3b82f6",
+    category: "DATA MANAGEMENT",
+  },
+  {
+    id: "google_sheets",
+    label: "Google Sheets",
+    description: "Read or write data to Google Sheets",
+    icon: <Sheet />,
+    color: "#10b981",
+    category: "DATA MANAGEMENT",
+  },
+  {
+    id: "mysql_query",
+    label: "MySQL Query",
+    description: "Run a MySQL database query",
+    icon: <Database />,
+    color: "#f97316",
+    category: "DATA MANAGEMENT",
+  },
+
+  // ── Notifications ─────────────────────────────────────
+  {
+    id: "send_email",
+    label: "Send Email",
+    description: "Send an email via SMTP",
+    icon: <Mail />,
+    color: "#0ea5e9",
+    category: "NOTIFICATIONS",
+  },
+
+  // ── Handoffs ──────────────────────────────────────────
+  {
+    id: "agent_transfer",
+    label: "Agent Transfer",
+    description: "Hand off conversation to a human agent",
+    icon: <HeadphonesIcon />,
+    color: "#14b8a6",
+    category: "HANDOFFS",
+  },
+  {
+    id: "ai_transfer",
+    label: "AI Transfer",
+    description: "Hand off conversation to an AI assistant",
+    icon: <Bot />,
+    color: "#8b5cf6",
+    category: "HANDOFFS",
+  },
+
+  // ── Flow Control ──────────────────────────────────────
+  {
+    id: "end_flow",
+    label: "End Flow",
+    description: "Terminate the automation flow",
+    icon: <Target />,
+    color: "#ef4444",
+    category: "FLOW CONTROL",
   },
 ];

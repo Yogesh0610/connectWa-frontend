@@ -49,7 +49,7 @@ const TeamForm = ({ id, isEdit = false }: TeamFormProps) => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("TeamForm: handleSubmit triggered");
+
     if (!name.trim()) {
       toast.error("Team name is required");
       return;

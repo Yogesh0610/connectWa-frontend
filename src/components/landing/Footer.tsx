@@ -25,7 +25,6 @@ const Footer: React.FC<FooterProps> = ({ data }) => {
   const { app_name, logo_dark_url } = useAppSelector((state) => state.setting);
 
   const scrollToSection = (id: string) => {
-    console.log(id);  
     const mapping: Record<string, string> = {
       support: "contact",
       home: "home",

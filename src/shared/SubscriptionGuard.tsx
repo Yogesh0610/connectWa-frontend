@@ -17,7 +17,7 @@ const SubscriptionGuard: React.FC<SubscriptionGuardProps> = ({ children }) => {
   const pathname = usePathname();
   const router = useRouter();
   const { isAuthenticated } = useAppSelector((state) => state.auth);
-  const { data: userSettings, isLoading } = useGetUserSettingsQuery(undefined, {
+  const { data: userSettings, isLoading, isError } = useGetUserSettingsQuery(undefined, {
     skip: !isAuthenticated,
   });
 
@@ -27,7 +27,8 @@ const SubscriptionGuard: React.FC<SubscriptionGuardProps> = ({ children }) => {
   const isSubscriptionPage = pathname === "/subscriptions";
   const isPublicRoute = pathname?.startsWith("/auth");
 
-  const showModal = !isLoading && userSettings?.data && !isSubscribed && !isSubscriptionPage && !isPublicRoute;
+  const blockAccess = !isLoading && (isError || (userSettings?.data && !isSubscribed));
+  const showModal = blockAccess && !isSubscriptionPage && !isPublicRoute;
 
   useEffect(() => {
     if (isSubscriptionPage && isRedirecting) {

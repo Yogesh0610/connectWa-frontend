@@ -18,6 +18,7 @@ import SessionWrapper from "../shared/SessionWrapper";
 import SubscriptionGuard from "../shared/SubscriptionGuard";
 import { authoption } from "./api/auth/[...nextauth]/authOption";
 import FacebookSDKProvider from "./FacebookSDKProvider";
+import { ErrorBoundary } from "../components/common/ErrorBoundary";
 import "./globals.css";
 import I18nProvider from "./I18nProvider";
 import ReduxProvider from "./ReduxProvider";
@@ -61,7 +62,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
                             <FacebookSDKProvider>
                               <SubscriptionGuard>
                                 <RoleGuard>
-                                  <FeatureGuard>{children}</FeatureGuard>
+                                  <FeatureGuard><ErrorBoundary>{children}</ErrorBoundary></FeatureGuard>
                                 </RoleGuard>
                               </SubscriptionGuard>
                             </FacebookSDKProvider>

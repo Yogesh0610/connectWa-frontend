@@ -45,7 +45,7 @@ const Platform: React.FC<PlatformProps> = ({ data }) => {
 
           <div className="relative z-10 grid [@media(max-width:1200px)]:grid-cols-1 gap-8 grid-cols-2 lg:gap-12">
             <div className="relative w-full overflow-hidden rounded-t-[24px] sm:rounded-t-[32px] bg-white/2 shadow-2xl platform-border h-65 sm:h-90 lg:h-120">
-              <Swiper loop onSwiper={(swiper) => (swiperRef.current = swiper)} onSlideChange={(swiper) => setActiveStep(swiper.realIndex)} modules={[Autoplay, Pagination, EffectFade]} effect="fade" slidesPerView={1} pagination={{ clickable: true }} onAutoplayStart={() => console.log("AUTOPLAY STARTED")} className="h-full w-full platform-swiper cursor-grab active:cursor-grabbing">
+              <Swiper loop onSwiper={(swiper) => (swiperRef.current = swiper)} onSlideChange={(swiper) => setActiveStep(swiper.realIndex)} modules={[Autoplay, Pagination, EffectFade]} effect="fade" slidesPerView={1} pagination={{ clickable: true }} onAutoplayStart={() => {}} className="h-full w-full platform-swiper cursor-grab active:cursor-grabbing">
                 {steps.map((step, index) => (
                   <SwiperSlide key={index}>
                     <div className="relative h-full w-full">
