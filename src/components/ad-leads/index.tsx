@@ -96,7 +96,7 @@ const AdLeadSourcesPage = () => {
   const [disconnectSource, { isLoading: isDisconnecting }] = useDisconnectSourceMutation();
   const [refreshToken, { isLoading: isRefreshing }] = useRefreshFbTokenMutation();
 
-  const { data: oauthUrlData } = useGetFbOAuthUrlQuery(undefined, { skip: !connectOpen || selectedPlatform === "google" });
+  const { data: oauthUrlData, error: oauthUrlError, isLoading: isOauthLoading } = useGetFbOAuthUrlQuery(undefined, { skip: !connectOpen || selectedPlatform === "google" || connectStep !== 2 });
 
   useEffect(() => {
     if (sourcesError) {
@@ -124,7 +124,8 @@ const AdLeadSourcesPage = () => {
     if (oauthUrlData?.url) {
       window.location.href = oauthUrlData.url;
     } else {
-      toast.error("Could not get OAuth URL");
+      const errMsg = (oauthUrlError as { data?: { message?: string } })?.data?.message;
+      toast.error(errMsg || "Could not get OAuth URL. Please configure Facebook App ID in WABA settings.");
     }
   };
 
@@ -524,8 +525,9 @@ const AdLeadSourcesPage = () => {
               <div className="flex gap-3 pt-2">
                 <Button variant="outline" className="flex-1" onClick={() => setConnectStep(1)}>Back</Button>
                 {connectMethod === "oauth" ? (
-                  <Button className="flex-1 bg-blue-600 hover:bg-blue-700 text-white" onClick={handleOAuthLogin}>
-                    <Facebook size={16} className="mr-2" /> Continue with Facebook
+                  <Button className="flex-1 bg-blue-600 hover:bg-blue-700 text-white" onClick={handleOAuthLogin} disabled={isOauthLoading}>
+                    {isOauthLoading ? <Loader2 size={15} className="animate-spin mr-2" /> : <Facebook size={16} className="mr-2" />}
+                    Continue with Facebook
                   </Button>
                 ) : (
                   <Button className="flex-1 bg-primary text-white" onClick={handleManualConnect} disabled={isConnectingManual || !manualForm.page_id || !manualForm.page_access_token}>
