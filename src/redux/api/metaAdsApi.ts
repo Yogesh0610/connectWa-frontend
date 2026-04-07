@@ -106,6 +106,10 @@ export const metaAdsApi = baseApi.enhanceEndpoints({ addTagTypes: ["MetaAccount"
       query: (params) => ({ url: "/meta-ads/campaigns", params: params ?? undefined }),
       providesTags: ["MetaCampaign"],
     }),
+    getMetaCampaignById: builder.query<{ success: boolean; data: MetaCampaign }, string>({
+      query: (id) => `/meta-ads/campaigns/${id}`,
+      providesTags: ["MetaCampaign"],
+    }),
     createMetaCampaign: builder.mutation<{ success: boolean; data: MetaCampaign }, Record<string, unknown>>({
       query: (body) => ({ url: "/meta-ads/campaigns", method: "POST", body }),
       invalidatesTags: ["MetaCampaign"],
@@ -192,6 +196,7 @@ export const {
   useGetMetaAdAccountsQuery,
   useDisconnectMetaAccountMutation,
   useGetMetaCampaignsQuery,
+  useGetMetaCampaignByIdQuery,
   useCreateMetaCampaignMutation,
   useSyncMetaCampaignsMutation,
   useUpdateMetaCampaignStatusMutation,

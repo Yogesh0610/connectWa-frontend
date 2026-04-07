@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useCreateMetaAdSetMutation, useGetMetaAdAccountsQuery } from "@/src/redux/api/metaAdsApi";
+import { useCreateMetaAdSetMutation, useGetMetaAdAccountsQuery, useGetMetaCampaignByIdQuery } from "@/src/redux/api/metaAdsApi";
 import { Button } from "@/src/elements/ui/button";
 import { Input } from "@/src/elements/ui/input";
 import { Label } from "@/src/elements/ui/label";
@@ -10,13 +10,15 @@ import CommonHeader from "@/src/shared/CommonHeader";
 import { Loader2, Save } from "lucide-react";
 import { toast } from "sonner";
 
-const OPTIMIZATION_GOALS = [
-  { value: "LEAD_GENERATION", label: "Lead Generation" },
-  { value: "LINK_CLICKS",     label: "Link Clicks" },
-  { value: "IMPRESSIONS",     label: "Impressions" },
-  { value: "REACH",           label: "Reach" },
-  { value: "CONVERSIONS",     label: "Conversions" },
-];
+const OBJECTIVE_GOALS: Record<string, { value: string; label: string }[]> = {
+  OUTCOME_LEADS:        [{ value: "LEAD_GENERATION", label: "Lead Generation" }, { value: "QUALITY_LEAD", label: "Quality Lead" }],
+  OUTCOME_TRAFFIC:      [{ value: "LINK_CLICKS", label: "Link Clicks" }, { value: "LANDING_PAGE_VIEWS", label: "Landing Page Views" }],
+  OUTCOME_AWARENESS:    [{ value: "REACH", label: "Reach" }, { value: "IMPRESSIONS", label: "Impressions" }, { value: "THRUPLAY", label: "ThruPlay" }],
+  OUTCOME_ENGAGEMENT:   [{ value: "POST_ENGAGEMENT", label: "Post Engagement" }, { value: "PAGE_LIKES", label: "Page Likes" }],
+  OUTCOME_SALES:        [{ value: "OFFSITE_CONVERSIONS", label: "Conversions" }, { value: "VALUE", label: "Value" }],
+  OUTCOME_APP_PROMOTION:[{ value: "APP_INSTALLS", label: "App Installs" }],
+};
+const DEFAULT_GOALS = [{ value: "LINK_CLICKS", label: "Link Clicks" }, { value: "IMPRESSIONS", label: "Impressions" }];
 
 const BILLING_EVENTS = [
   { value: "IMPRESSIONS", label: "Per 1,000 Impressions (CPM)" },
@@ -26,13 +28,17 @@ const BILLING_EVENTS = [
 const CreateMetaAdSet = ({ campaignId }: { campaignId: string }) => {
   const router = useRouter();
   const { data: accountsRes } = useGetMetaAdAccountsQuery();
+  const { data: campaignRes } = useGetMetaCampaignByIdQuery(campaignId);
   const [createAdSet, { isLoading }] = useCreateMetaAdSetMutation();
+
+  const campaignObjective = campaignRes?.data?.objective || "";
+  const availableGoals = OBJECTIVE_GOALS[campaignObjective] || DEFAULT_GOALS;
 
   const [form, setForm] = useState({
     ad_account_id: "",
     name: "",
     daily_budget: "",
-    optimization_goal: "LEAD_GENERATION",
+    optimization_goal: "",
     billing_event: "IMPRESSIONS",
     start_time: "",
     end_time: "",
@@ -40,6 +46,11 @@ const CreateMetaAdSet = ({ campaignId }: { campaignId: string }) => {
 
   const accounts = accountsRes?.data || [];
   const set = (k: string, v: string) => setForm((p) => ({ ...p, [k]: v }));
+
+  // Auto-select first valid goal when campaign loads
+  if (availableGoals.length && !form.optimization_goal) {
+    setForm((p) => ({ ...p, optimization_goal: availableGoals[0].value }));
+  }
 
   const handleSubmit = async () => {
     if (!form.ad_account_id || !form.name || !form.daily_budget) {
@@ -94,7 +105,7 @@ const CreateMetaAdSet = ({ campaignId }: { campaignId: string }) => {
           <Select value={form.optimization_goal} onValueChange={(v) => set("optimization_goal", v)}>
             <SelectTrigger className="h-11"><SelectValue /></SelectTrigger>
             <SelectContent>
-              {OPTIMIZATION_GOALS.map((g) => <SelectItem key={g.value} value={g.value}>{g.label}</SelectItem>)}
+              {availableGoals.map((g) => <SelectItem key={g.value} value={g.value}>{g.label}</SelectItem>)}
             </SelectContent>
           </Select>
         </div>
