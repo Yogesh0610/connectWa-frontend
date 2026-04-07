@@ -12,7 +12,7 @@ import CommonHeader from "@/src/shared/CommonHeader";
 import ConfirmModal from "@/src/shared/ConfirmModal";
 import { DataTable } from "@/src/shared/DataTable";
 import { Column } from "@/src/types/shared";
-import { Pause, Play, Plus, Trash2 } from "lucide-react";
+import { Eye, Pause, Play, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 const STATUS_CONFIG: Record<string, { label: string; dot: string; badge: string }> = {
@@ -78,6 +78,10 @@ const MetaAdsetsPage = ({ campaignId }: { campaignId: string }) => {
       header: "Actions",
       cell: (row) => (
         <div className="flex items-center gap-1.5 justify-end pr-2">
+          <Button variant="ghost" size="sm" className="h-8 w-8 p-0 rounded-lg hover:bg-primary/10 hover:text-primary"
+            onClick={() => router.push(`/ads/meta/campaigns/${campaignId}/adsets/${row._id}/ads`)}>
+            <Eye size={13} />
+          </Button>
           <Button variant="ghost" size="sm"
             className={`h-8 w-8 p-0 rounded-lg ${row.status === "ACTIVE" ? "hover:bg-amber-50 hover:text-amber-500" : "hover:bg-emerald-50 hover:text-emerald-500"}`}
             onClick={() => handleToggleStatus(row._id, row.status)}>
