@@ -51,7 +51,7 @@ const CreateMetaAdSet = ({ campaignId }: { campaignId: string }) => {
         campaign_id: campaignId,
         ad_account_id: form.ad_account_id,
         name: form.name,
-        daily_budget: Math.round(parseFloat(form.daily_budget) * 100),
+        daily_budget: parseFloat(form.daily_budget),
         optimization_goal: form.optimization_goal,
         billing_event: form.billing_event,
         start_time: form.start_time || undefined,
