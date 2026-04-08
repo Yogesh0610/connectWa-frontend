@@ -5,7 +5,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/src/elements/ui/tooltip";
 import { cn } from "@/src/lib/utils";
 import { useGetRecentChatsQuery, useTogglePinChatMutation } from "@/src/redux/api/chatApi";
-import { useGetWabaPhoneNumbersQuery } from "@/src/redux/api/whatsappApi";
+import { useGetMyPhoneNumbersQuery } from "@/src/redux/api/whatsappApi";
 import { useAppDispatch, useAppSelector } from "@/src/redux/hooks";
 import { rehydrateChat, selectChat, selSelectPhoneNumber, setLeftSidebartoggle } from "@/src/redux/reducers/messenger/chatSlice";
 import { RootState } from "@/src/redux/store";
@@ -45,23 +45,27 @@ const ChatSidebar = () => {
   const [filters, setFilters] = useState<{ startDate?: string; endDate?: string; tagLabel?: string; hasNotes?: boolean; agentId?: string }>({});
   const activeFilterCount = Object.keys(filters).length;
 
-  const { data: phoneNumbersData, isLoading: isLoadingPhones } = useGetWabaPhoneNumbersQuery(selectedWabaId || "", { skip: !selectedWabaId });
+  const { data: phoneNumbersData, isLoading: isLoadingPhones } = useGetMyPhoneNumbersQuery();
 
   const phoneNumbers = useMemo(() => {
+
     const list = (phoneNumbersData as any)?.data || [];
     return list;
   }, [phoneNumbersData]);
-
+  console.log("phoneNumbersData", phoneNumbersData, "phoneNumbers", phoneNumbers);
   useEffect(() => {
     dispatch(rehydrateChat());
   }, [dispatch]);
 
   useEffect(() => {
     if (isRehydrated && phoneNumbers.length > 0) {
-      const isCurrentlySelectedValid = selectedPhoneNumberId && phoneNumbers.find((p: any) => String(p.id) === String(selectedPhoneNumberId));
+      const isCurrentlySelectedValid = selectedPhoneNumberId &&
+        phoneNumbers.find((p: any) => String(p.id) === String(selectedPhoneNumberId));
       if (!isCurrentlySelectedValid) {
-        const firstId = String(phoneNumbers[0].id);
-        dispatch(selSelectPhoneNumber(firstId));
+        dispatch(selSelectPhoneNumber({
+          id: String(phoneNumbers[0].id),
+          skipClearChat: true,  // ✅ selectedChat clear mat karo
+        }));
       }
     }
   }, [phoneNumbers, selectedPhoneNumberId, dispatch, isRehydrated]);
