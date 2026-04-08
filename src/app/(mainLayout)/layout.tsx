@@ -1,10 +1,12 @@
 "use client";
 
 import ContactImportProgressPopup from "@/src/components/contact/ContactImportProgressPopup";
+import IncomingCallModal from "@/src/components/whatsapp-calling/IncomingCallModal";
 import Header from "@/src/components/layouts/Header";
 import Sidebar from "@/src/components/layouts/Sidebar";
 import ChatThemeProvider from "@/src/components/providers/ChatThemeProvider";
 import { useContactImportProgress } from "@/src/hooks/useContactImportProgress";
+import { useIncomingCall } from "@/src/hooks/useIncomingCall";
 import { useGetSettingsQuery, useGetUserSettingsQuery } from "@/src/redux/api/settingsApi";
 import { useGetUserSubscriptionQuery } from "@/src/redux/api/subscriptionApi";
 import { useGetWorkspacesQuery } from "@/src/redux/api/workspaceApi";
@@ -18,6 +20,7 @@ import React, { useEffect, useRef } from "react";
 
 const Layout = ({ children }: { children: React.ReactNode }) => {
   useContactImportProgress();
+  const { incomingCall, activeCallId, acceptCall, endCall, dismiss } = useIncomingCall();
   const router = useRouter();
   const dispatch = useAppDispatch();
   const { sidebarToggle } = useAppSelector((state) => state.layout);
@@ -144,6 +147,15 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
             </ChatThemeProvider>
           </main>
           <ContactImportProgressPopup />
+          {incomingCall && (
+            <IncomingCallModal
+              call={incomingCall}
+              activeCallId={activeCallId}
+              onAccepted={acceptCall}
+              onEnded={endCall}
+              onDismiss={dismiss}
+            />
+          )}
         </div>
       )}
     </>
