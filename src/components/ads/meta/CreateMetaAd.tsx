@@ -491,7 +491,7 @@ const CreateMetaAd = ({ campaignId, adsetId }: { campaignId: string; adsetId: st
                   {card.image_preview ? (
                     <div className="relative h-32 rounded-lg overflow-hidden border border-slate-200 dark:border-(--card-border-color)">
                       <img src={card.image_preview} alt={`Card ${idx + 1}`} className="w-full h-full object-cover" />
-                      <button onClick={() => setCard(idx, "image_hash", "") || setCard(idx, "image_preview", "")}
+                      <button onClick={() => { setCard(idx, "image_hash", ""); setCard(idx, "image_preview", ""); }}
                         className="absolute top-1.5 right-1.5 p-1 bg-white/80 hover:bg-white rounded-full">
                         <X size={11} />
                       </button>
