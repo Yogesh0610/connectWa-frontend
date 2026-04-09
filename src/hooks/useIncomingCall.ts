@@ -25,17 +25,24 @@ export function useIncomingCall() {
       setActiveCallId((prev) => (prev === waCallId ? null : prev));
     };
 
+    const handleEnded = ({ waCallId }: { waCallId: string }) => {
+      setIncomingCall((prev) => (prev?.waCallId === waCallId ? null : prev));
+      setActiveCallId((prev) => (prev === waCallId ? null : prev));
+    };
+
     socket.on("call:incoming", handleIncoming);
     socket.on("call:missed", handleMissed);
+    socket.on("call:ended", handleEnded);
 
     return () => {
       socket.off("call:incoming", handleIncoming);
       socket.off("call:missed", handleMissed);
+      socket.off("call:ended", handleEnded);
     };
   }, []);
 
+  // Accept: keep incomingCall alive so IncomingCallModal can render ActiveCallPanel
   const acceptCall = (waCallId: string) => {
-    setIncomingCall(null);
     setActiveCallId(waCallId);
   };
 

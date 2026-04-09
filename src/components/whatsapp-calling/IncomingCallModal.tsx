@@ -6,7 +6,7 @@ import { useHumanCallAudio } from "@/src/hooks/useHumanCallAudio";
 import { IncomingCallPayload } from "@/src/hooks/useIncomingCall";
 import { useAnswerHumanCallMutation, useRejectHumanCallMutation } from "@/src/redux/api/whatsappCallingApi";
 import { Mic, MicOff, Phone, PhoneOff, User } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 interface Props {
@@ -17,10 +17,23 @@ interface Props {
   onDismiss: () => void;
 }
 
+function useElapsedSeconds() {
+  const [elapsed, setElapsed] = useState(0);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  useEffect(() => {
+    intervalRef.current = setInterval(() => setElapsed((s) => s + 1), 1000);
+    return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
+  }, []);
+  const mm = String(Math.floor(elapsed / 60)).padStart(2, "0");
+  const ss = String(elapsed % 60).padStart(2, "0");
+  return `${mm}:${ss}`;
+}
+
 // ── Active call panel (shown after accepting) ──────────────────────────────────
 function ActiveCallPanel({ call, onEnded }: { call: IncomingCallPayload; onEnded: () => void }) {
   const [rejectCall, { isLoading }] = useRejectHumanCallMutation();
   const [muted, setMuted] = useState(false);
+  const timer = useElapsedSeconds();
 
   // Start the audio bridge (mic → server → Meta, Meta → server → speaker)
   useHumanCallAudio(muted ? null : call.waCallId);
@@ -42,9 +55,9 @@ function ActiveCallPanel({ call, onEnded }: { call: IncomingCallPayload; onEnded
           <p className="text-xs text-green-100 font-medium uppercase tracking-wide">Active Call</p>
           <p className="text-white font-semibold text-sm">{call.agentName}</p>
         </div>
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1.5">
           <div className="w-2 h-2 rounded-full bg-green-300 animate-pulse" />
-          <span className="text-green-100 text-xs">Live</span>
+          <span className="text-green-100 text-xs font-mono">{timer}</span>
         </div>
       </div>
 
