@@ -1,5 +1,5 @@
 import { MenuItem } from "@/src/types/components";
-import { BarChart3, BellOff, BookImage, BookKey, Bot, BotMessageSquare, Cable, Clock, Columns, Contact, Database, Form, HatGlasses, HeadphonesIcon, Image, Import, LayoutDashboard, LayoutTemplate, List, ListOrdered, Mail, MailCheck, MapPin, Megaphone, MessageCircle, MousePointer2, Phone, PhoneCall, Plug, Receipt, RefreshCcw, Settings, Sheet, Tags, Target, Type, Users, Webhook, Workflow, Wrench, Zap } from "lucide-react";
+import { BarChart3, BellOff, BookImage, BookKey, Bot, BotMessageSquare, Cable, Clock, Columns, Contact, Database, Form, HatGlasses, HeadphonesIcon, Image, Import, LayoutDashboard, LayoutTemplate, List, ListOrdered, Mail, MailCheck, MapPin, Megaphone, MessageCircle, MousePointer2, Phone, PhoneCall, Plug, Receipt, RefreshCcw, Settings, Share2, Sheet, Tags, Target, Type, Users, Webhook, Workflow, Wrench, Zap } from "lucide-react";
 
 export const MENUITEMS: MenuItem[] = [
   {
@@ -226,6 +226,14 @@ export const MENUITEMS: MenuItem[] = [
     path: "/ads",
     section: "sidebar.marketing",
     order: 15,
+    permission: "view.campaigns",
+  },
+  {
+    icon: <Share2 size={20} />,
+    label: "sidebar.social_posts",
+    path: "/social",
+    section: "sidebar.marketing",
+    order: 16,
     permission: "view.campaigns",
   },
 ];
