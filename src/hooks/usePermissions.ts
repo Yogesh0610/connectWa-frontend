@@ -62,15 +62,16 @@ export const usePermissions = () => {
           return item.path;
         }
       }
-      return "/dashboard";
+      return "/chat"; // safe fallback — agents always have chat access
     },
     [hasPermission]
   );
 
   const isRoutePermitted = useCallback(
     (pathname: string, overridePermissions?: string[]): boolean => {
+      // Dashboard is always accessible to authenticated users
       if (pathname === "/" || pathname === "/dashboard") {
-        return hasPermission("view.dashboard", overridePermissions);
+        return true;
       }
 
       const matchingItem = MENUITEMS.find((item) => pathname === item.path || pathname.startsWith(item.path + "/"));

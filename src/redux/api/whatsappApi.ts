@@ -51,7 +51,7 @@ export const whatsappApi = baseApi.enhanceEndpoints({ addTagTypes: ["Whatsapp", 
     }),
     getWabaPhoneNumbers: builder.query({
       query: (wabaId: string) => ({
-        url: `/whatsapp/${wabaId}`,
+        url: `/whatsapp/${wabaId}/phone-numbers`,
       }),
     }),
     getMyPhoneNumbers: builder.query({

@@ -45,7 +45,7 @@ const ChatSidebar = () => {
   const [filters, setFilters] = useState<{ startDate?: string; endDate?: string; tagLabel?: string; hasNotes?: boolean; agentId?: string }>({});
   const activeFilterCount = Object.keys(filters).length;
 
-  const { data: phoneNumbersData, isLoading: isLoadingPhones } = useGetMyPhoneNumbersQuery();
+  const { data: phoneNumbersData, isLoading: isLoadingPhones } = useGetMyPhoneNumbersQuery(undefined);
 
   const phoneNumbers = useMemo(() => {
 
