@@ -140,6 +140,8 @@ const CreateMetaAdSet = ({ campaignId }: { campaignId: string }) => {
   const objective     = campaign?.objective || "";
   const bidStrategy   = campaign?.bid_strategy || "";
   const availableGoals = OBJECTIVE_GOALS[objective] || DEFAULT_GOALS;
+  // If campaign has a budget set (CBO), ad sets must NOT set their own budget
+  const campaignHasBudget = !!(campaign?.daily_budget || campaign?.lifetime_budget);
 
   const [form, setForm] = useState({
     ad_account_id:     "",
@@ -200,8 +202,10 @@ const CreateMetaAdSet = ({ campaignId }: { campaignId: string }) => {
     if (!form.name.trim())   { toast.error("Ad set name is required"); return; }
     if (!form.optimization_goal) { toast.error("Select an optimization goal"); return; }
 
-    const budgetVal = form.budgetType === "daily" ? form.daily_budget : form.lifetime_budget;
-    if (!budgetVal || Number(budgetVal) <= 0) { toast.error("Enter a valid budget"); return; }
+    if (!campaignHasBudget) {
+      const budgetVal = form.budgetType === "daily" ? form.daily_budget : form.lifetime_budget;
+      if (!budgetVal || Number(budgetVal) <= 0) { toast.error("Enter a valid budget"); return; }
+    }
 
     if (needsPageId && !form.page_id) {
       toast.error(`"${selectedGoalDef?.label}" requires selecting a Facebook Page`);
@@ -399,26 +403,34 @@ const CreateMetaAdSet = ({ campaignId }: { campaignId: string }) => {
         </Section>
 
         {/* ── Budget ─────────────────────────────────────────────────────── */}
-        <Section title="Budget">
-          <div className="grid grid-cols-2 gap-3">
-            {["daily", "lifetime"].map(type => (
-              <button key={type} onClick={() => set("budgetType", type)}
-                className={`p-3 rounded-lg border-2 text-left transition-all ${form.budgetType === type
-                  ? "border-primary bg-primary/5 dark:bg-primary/10"
-                  : "border-slate-200 dark:border-(--card-border-color) hover:border-primary/30"}`}>
-                <p className="text-sm font-bold text-slate-800 dark:text-slate-200 capitalize">{type} Budget</p>
-                <p className="text-[10px] text-slate-400 mt-0.5">{type === "daily" ? "Spend per day" : "Total spend"}</p>
-              </button>
-            ))}
-          </div>
-          <Field label="Amount (INR) *">
-            <Input type="number" min={1}
-              value={form.budgetType === "daily" ? form.daily_budget : form.lifetime_budget}
-              onChange={e => set(form.budgetType === "daily" ? "daily_budget" : "lifetime_budget", e.target.value)}
-              placeholder={form.budgetType === "daily" ? "Min ₹41/day" : "e.g. 10000"}
-              className="h-10 bg-slate-50/50 dark:border-none border-slate-200 rounded-lg" />
-          </Field>
-        </Section>
+        {campaignHasBudget ? (
+          <Section title="Budget">
+            <p className="text-sm text-slate-500 dark:text-slate-400 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
+              This campaign uses <strong>Campaign Budget Optimization (CBO)</strong>. Budget is managed at the campaign level — no ad set budget needed.
+            </p>
+          </Section>
+        ) : (
+          <Section title="Budget">
+            <div className="grid grid-cols-2 gap-3">
+              {["daily", "lifetime"].map(type => (
+                <button key={type} onClick={() => set("budgetType", type)}
+                  className={`p-3 rounded-lg border-2 text-left transition-all ${form.budgetType === type
+                    ? "border-primary bg-primary/5 dark:bg-primary/10"
+                    : "border-slate-200 dark:border-(--card-border-color) hover:border-primary/30"}`}>
+                  <p className="text-sm font-bold text-slate-800 dark:text-slate-200 capitalize">{type} Budget</p>
+                  <p className="text-[10px] text-slate-400 mt-0.5">{type === "daily" ? "Spend per day" : "Total spend"}</p>
+                </button>
+              ))}
+            </div>
+            <Field label="Amount (INR) *">
+              <Input type="number" min={1}
+                value={form.budgetType === "daily" ? form.daily_budget : form.lifetime_budget}
+                onChange={e => set(form.budgetType === "daily" ? "daily_budget" : "lifetime_budget", e.target.value)}
+                placeholder={form.budgetType === "daily" ? "Min ₹41/day" : "e.g. 10000"}
+                className="h-10 bg-slate-50/50 dark:border-none border-slate-200 rounded-lg" />
+            </Field>
+          </Section>
+        )}
 
         {/* ── Targeting ──────────────────────────────────────────────────── */}
         <Section title="Audience Targeting">
