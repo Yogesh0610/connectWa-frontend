@@ -185,6 +185,12 @@ export const metaAdsApi = baseApi.enhanceEndpoints({ addTagTypes: ["MetaAccount"
     getMetaAccountPages: builder.query<{ success: boolean; data: { page_id: string; page_name: string }[] }, { ad_account_id: string }>({
       query: (params) => ({ url: "/meta-ads/pages", params }),
     }),
+
+    // ── Token Refresh ────────────────────────────────────
+    refreshMetaToken: builder.mutation<{ success: boolean; message: string }, string>({
+      query: (id) => ({ url: `/meta-ads/accounts/${id}/refresh-token`, method: "POST" }),
+      invalidatesTags: ["MetaAccount"],
+    }),
   }),
 });
 
@@ -216,4 +222,5 @@ export const {
   useCreateMetaLeadFormMutation,
   useGetFormLeadsQuery,
   useGetMetaAccountPagesQuery,
+  useRefreshMetaTokenMutation,
 } = metaAdsApi;

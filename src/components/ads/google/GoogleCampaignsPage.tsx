@@ -4,14 +4,16 @@ import { useRouter } from "next/navigation";
 import {
   useGetGoogleCampaignsQuery, useGetGoogleAdAccountsQuery,
   useUpdateGoogleCampaignStatusMutation, useSyncGoogleCampaignsMutation,
+  useDeleteGoogleCampaignMutation,
 } from "@/src/redux/api/googleAdsApi";
 import { Button } from "@/src/elements/ui/button";
 import { Badge } from "@/src/elements/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/src/elements/ui/select";
 import CommonHeader from "@/src/shared/CommonHeader";
+import ConfirmModal from "@/src/shared/ConfirmModal";
 import { DataTable } from "@/src/shared/DataTable";
 import { Column } from "@/src/types/shared";
-import { BarChart3, Pause, Play, Plus } from "lucide-react";
+import { BarChart3, Pause, Play, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 const STATUS_CFG: Record<string, { label: string; dot: string; badge: string }> = {
@@ -30,6 +32,7 @@ const GoogleCampaignsPage = () => {
   const [statusFilter, setStatusFilter] = useState("");
   const [typeFilter, setTypeFilter] = useState("");
   const [accountFilter, setAccountFilter] = useState("");
+  const [deleteInfo, setDeleteInfo] = useState<{ id: string; name: string } | null>(null);
 
   const { data: accountsRes } = useGetGoogleAdAccountsQuery();
   const { data: campaignsRes, isLoading, isFetching, refetch } = useGetGoogleCampaignsQuery({
@@ -38,6 +41,7 @@ const GoogleCampaignsPage = () => {
   });
   const [updateStatus] = useUpdateGoogleCampaignStatusMutation();
   const [sync] = useSyncGoogleCampaignsMutation();
+  const [deleteCampaign, { isLoading: isDeleting }] = useDeleteGoogleCampaignMutation();
 
   const accounts = accountsRes?.data || [];
   const campaigns = campaignsRes?.data || [];
@@ -96,6 +100,8 @@ const GoogleCampaignsPage = () => {
             onClick={() => handleToggle(row._id, row.status)}>
             {row.status==="ENABLED" ? <Pause size={13}/> : <Play size={13}/>}
           </Button>
+          <Button variant="ghost" size="sm" className="h-8 w-8 p-0 rounded-lg hover:bg-red-50 hover:text-red-500"
+            onClick={() => setDeleteInfo({ id: row._id, name: row.name })}><Trash2 size={13}/></Button>
         </div>
       ),
     },
@@ -146,6 +152,15 @@ const GoogleCampaignsPage = () => {
           getRowId={(item) => item._id} emptyMessage="No campaigns found."
           className="border-none shadow-none rounded-none" />
       </div>
+
+      <ConfirmModal isOpen={!!deleteInfo} onClose={() => setDeleteInfo(null)}
+        onConfirm={async () => {
+          try { await deleteCampaign(deleteInfo!.id).unwrap(); toast.success("Campaign deleted"); setDeleteInfo(null); }
+          catch { toast.error("Failed to delete campaign"); }
+        }}
+        isLoading={isDeleting} title="Delete Campaign"
+        subtitle={`Delete "${deleteInfo?.name}"? This also removes it from Google Ads.`}
+        confirmText="Delete" variant="danger" />
     </div>
   );
 };
