@@ -9,12 +9,14 @@ import {
   usePublishSocialPostMutation,
   useDeleteSocialPostMutation,
   useRefreshPostAnalyticsMutation,
+  useRetryFailedPostMutation,
   SocialPost,
-} from "@/redux/api/socialApi";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Linkedin, Facebook, Instagram, Plus, Trash2, Send, BarChart2, Calendar, Clock, CheckCircle2, XCircle, Loader2, RefreshCw } from "lucide-react";
+  PostTarget,
+} from "@/src/redux/api/socialApi";
+import { Button } from "@/src/elements/ui/button";
+import { Badge }  from "@/src/elements/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/src/elements/ui/select";
+import { LinkedinIcon, FacebookIcon, InstagramIcon, TwitterIcon, Plus, Trash2, Send, BarChart2, Calendar, Clock, CheckCircle2, RefreshCw, RotateCcw } from "lucide-react";
 
 const STATUS_COLOR: Record<string, string> = {
   draft:               "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300",
@@ -26,9 +28,10 @@ const STATUS_COLOR: Record<string, string> = {
 };
 
 const PLATFORM_ICON: Record<string, React.ReactNode> = {
-  linkedin:  <Linkedin  size={14} className="text-blue-700" />,
-  facebook:  <Facebook  size={14} className="text-indigo-600" />,
-  instagram: <Instagram size={14} className="text-pink-600" />,
+  linkedin:  <LinkedinIcon  size={14} className="text-blue-700" />,
+  facebook:  <FacebookIcon  size={14} className="text-indigo-600" />,
+  instagram: <InstagramIcon size={14} className="text-pink-600" />,
+  twitter:   <TwitterIcon   size={14} className="text-slate-700" />,
 };
 
 export default function SocialPostsPage() {
@@ -38,13 +41,14 @@ export default function SocialPostsPage() {
   const { data, isLoading, refetch } = useGetSocialPostsQuery(
     { status: statusFilter || undefined, page, limit: 15 }
   );
-  const [publishPost, { isLoading: isPublishing }] = usePublishSocialPostMutation();
-  const [deletePost,  { isLoading: isDeleting   }] = useDeleteSocialPostMutation();
-  const [refreshAnalytics]                          = useRefreshPostAnalyticsMutation();
+  const [publishPost,       { isLoading: isPublishing }] = usePublishSocialPostMutation();
+  const [deletePost,        { isLoading: isDeleting   }] = useDeleteSocialPostMutation();
+  const [refreshAnalytics]                               = useRefreshPostAnalyticsMutation();
+  const [retryPost]                                      = useRetryFailedPostMutation();
 
-  const posts: SocialPost[]  = data?.data || [];
-  const total                = data?.pagination?.total || 0;
-  const totalPages           = Math.ceil(total / 15);
+  const posts: SocialPost[] = data?.data || [];
+  const total               = data?.pagination?.total || 0;
+  const totalPages          = Math.ceil(total / 15);
 
   const handlePublish = async (post: SocialPost) => {
     try {
@@ -55,8 +59,17 @@ export default function SocialPostsPage() {
     }
   };
 
+  const handleRetry = async (post: SocialPost) => {
+    try {
+      await retryPost(post._id).unwrap();
+      toast.success("Post queued for retry");
+    } catch (e: unknown) {
+      toast.error((e as { data?: { message?: string } })?.data?.message || "Failed to retry");
+    }
+  };
+
   const handleDelete = async (post: SocialPost) => {
-    if (!confirm(`Delete "${post.title || post.content.slice(0, 40)}..."?`)) return;
+    if (!confirm(`Delete this post?`)) return;
     try {
       await deletePost(post._id).unwrap();
       toast.success("Post deleted");
@@ -78,8 +91,14 @@ export default function SocialPostsPage() {
           <p className="text-sm text-slate-500 mt-1">{total} post{total !== 1 ? "s" : ""} total</p>
         </div>
         <div className="flex items-center gap-3">
+          <Link href="/social/analytics">
+            <Button variant="outline" size="sm" className="gap-1.5"><BarChart2 size={14} /> Analytics</Button>
+          </Link>
+          <Link href="/social/bulk">
+            <Button variant="outline" size="sm">Bulk Schedule</Button>
+          </Link>
           <Link href="/social/accounts">
-            <Button variant="outline" size="sm">Manage Accounts</Button>
+            <Button variant="outline" size="sm">Accounts</Button>
           </Link>
           <Link href="/social/create">
             <Button size="sm" className="gap-2"><Plus size={14} /> New Post</Button>
@@ -89,8 +108,8 @@ export default function SocialPostsPage() {
 
       {/* Filters */}
       <div className="flex items-center gap-3 mb-4">
-        <Select value={statusFilter} onValueChange={v => { setStatusFilter(v === "all" ? "" : v); setPage(1); }}>
-          <SelectTrigger className="w-40 h-9 text-sm">
+        <Select value={statusFilter} onValueChange={(v: string) => { setStatusFilter(v === "all" ? "" : v); setPage(1); }}>
+          <SelectTrigger className="w-44 h-9 text-sm">
             <SelectValue placeholder="All statuses" />
           </SelectTrigger>
           <SelectContent className="dark:bg-(--card-color) dark:border-(--card-border-color)">
@@ -107,14 +126,13 @@ export default function SocialPostsPage() {
         </Button>
       </div>
 
-      {/* Posts list */}
       {isLoading ? (
         <div className="space-y-3">
           {[1,2,3].map(i => <div key={i} className="h-24 rounded-xl bg-slate-100 dark:bg-slate-800 animate-pulse" />)}
         </div>
       ) : posts.length === 0 ? (
         <div className="text-center py-20 text-slate-400">
-          <Linkedin size={44} className="mx-auto mb-3 opacity-20" />
+          <LinkedinIcon size={44} className="mx-auto mb-3 opacity-20" />
           <p className="font-medium text-slate-600 dark:text-slate-300">No posts yet</p>
           <p className="text-sm mb-4">Create your first social media post</p>
           <Link href="/social/create">
@@ -127,40 +145,32 @@ export default function SocialPostsPage() {
             <div key={post._id}
               className="rounded-xl border border-slate-200 dark:border-(--card-border-color) bg-white dark:bg-(--card-color) p-4">
               <div className="flex items-start gap-4">
-                {/* Media thumbnail */}
                 {post.media?.[0]?.url && (
                   <img src={post.media[0].url} alt="" className="w-16 h-16 rounded-lg object-cover flex-shrink-0" />
                 )}
-
                 <div className="flex-1 min-w-0">
-                  {/* Header */}
                   <div className="flex items-center gap-2 flex-wrap mb-1.5">
                     {post.title && <span className="font-semibold text-sm text-slate-800 dark:text-white">{post.title}</span>}
                     <Badge className={`text-xs ${STATUS_COLOR[post.status]}`}>
-                      {post.status.replace("_", " ")}
+                      {post.status.replace(/_/g, " ")}
                     </Badge>
-                    {/* Platform targets */}
                     <div className="flex items-center gap-1">
-                      {post.targets.map((t, i) => (
-                        <div key={i} title={`${t.account_name} (${t.status})`}
-                          className={`p-1 rounded ${t.status === "published" ? "opacity-100" : t.status === "failed" ? "opacity-50 text-red-500" : "opacity-60"}`}>
-                          {PLATFORM_ICON[t.platform] || <Linkedin size={14} />}
-                        </div>
+                      {post.targets.map((t: PostTarget, i: number) => (
+                        <span key={i} title={`${t.account_name} (${t.status})`}
+                          className={t.status === "failed" ? "opacity-40 text-red-500" : t.status === "published" ? "opacity-100" : "opacity-50"}>
+                          {PLATFORM_ICON[t.platform] || <LinkedinIcon size={14} />}
+                        </span>
                       ))}
                     </div>
                   </div>
-
-                  {/* Content preview */}
                   <p className="text-sm text-slate-600 dark:text-slate-400 line-clamp-2">{post.content}</p>
-
-                  {/* Meta */}
-                  <div className="flex items-center gap-3 mt-2 text-xs text-slate-400">
+                  <div className="flex items-center gap-4 mt-2 text-xs text-slate-400">
                     {post.scheduled_at && (
                       <span className="flex items-center gap-1">
                         <Calendar size={11} /> {format(new Date(post.scheduled_at), "MMM d, yyyy h:mm a")}
                       </span>
                     )}
-                    {post.published_at && !post.scheduled_at && (
+                    {post.published_at && (
                       <span className="flex items-center gap-1">
                         <CheckCircle2 size={11} className="text-green-500" />
                         {format(new Date(post.published_at), "MMM d, yyyy h:mm a")}
@@ -170,27 +180,28 @@ export default function SocialPostsPage() {
                       <Clock size={11} /> {format(new Date(post.createdAt), "MMM d")}
                     </span>
                   </div>
-
-                  {/* Analytics (published only) */}
-                  {post.status === "published" && post.targets.some(t => t.analytics) && (
-                    <div className="flex items-center gap-4 mt-2 text-xs text-slate-500">
-                      {post.targets.map((t, i) => t.analytics ? (
+                  {["published", "partially_published"].includes(post.status) && post.targets.some((t: PostTarget) => t.analytics) && (
+                    <div className="flex items-center gap-4 mt-1.5 text-xs text-slate-500">
+                      {post.targets.map((t: PostTarget, i: number) => t.analytics && t.status === "published" ? (
                         <span key={i} className="flex items-center gap-1">
-                          {PLATFORM_ICON[t.platform]}
-                          {t.analytics.likes}♥ {t.analytics.comments}💬 {t.analytics.shares}🔁
-                          {t.analytics.impressions > 0 && ` ${t.analytics.impressions} views`}
+                          {PLATFORM_ICON[t.platform]} {t.analytics.likes}♥ {t.analytics.comments}💬 {t.analytics.shares}🔁
+                          {t.analytics.impressions > 0 && ` · ${t.analytics.impressions} views`}
                         </span>
                       ) : null)}
                     </div>
                   )}
                 </div>
-
-                {/* Actions */}
                 <div className="flex items-center gap-1.5 flex-shrink-0">
-                  {["draft", "scheduled", "failed"].includes(post.status) && (
+                  {["draft", "scheduled"].includes(post.status) && (
                     <Button size="sm" variant="outline" onClick={() => handlePublish(post)}
                       disabled={isPublishing} className="gap-1.5 h-8 text-xs">
                       <Send size={12} /> Post Now
+                    </Button>
+                  )}
+                  {post.status === "failed" && (
+                    <Button size="sm" variant="outline" onClick={() => handleRetry(post)}
+                      className="gap-1.5 h-8 text-xs text-amber-600 border-amber-300 hover:bg-amber-50">
+                      <RotateCcw size={12} /> Retry
                     </Button>
                   )}
                   {["published", "partially_published"].includes(post.status) && (
@@ -211,7 +222,6 @@ export default function SocialPostsPage() {
         </div>
       )}
 
-      {/* Pagination */}
       {totalPages > 1 && (
         <div className="flex items-center justify-center gap-2 mt-6">
           <Button variant="outline" size="sm" disabled={page === 1} onClick={() => setPage(p => p - 1)}>Prev</Button>

@@ -135,12 +135,51 @@ export const socialApi = baseApi
         query: (id) => ({ url: `/social/posts/${id}`, method: "DELETE" }),
         invalidatesTags: ["SocialPost"],
       }),
+
+      retryFailedPost: builder.mutation<{ success: boolean }, string>({
+        query: (id) => ({ url: `/social/posts/${id}/retry`, method: "POST" }),
+        invalidatesTags: ["SocialPost"],
+      }),
+
+      bulkSchedulePosts: builder.mutation<
+        { success: boolean; data: { created: number; failed: number; errors: { index: number; error: string }[] } },
+        { posts: { title?: string; content: string; hashtags?: string[]; link_url?: string; targets: PostTarget[]; scheduled_at: string; timezone?: string }[] }
+      >({
+        query: (body) => ({ url: "/social/posts/bulk-schedule", method: "POST", body }),
+        invalidatesTags: ["SocialPost"],
+      }),
+
+      // ── Analytics ─────────────────────────────────────────────────────────
+      getSocialAnalytics: builder.query<{
+        success: boolean;
+        data: {
+          overview: {
+            stats: { total: number; published: number; scheduled: number; failed: number; draft: number };
+            byPlatform: Record<string, { posts: number; likes: number; comments: number; shares: number; impressions: number; clicks: number; engagement_rate: number }>;
+          };
+          timeline: { date: string; likes: number; comments: number; shares: number; impressions: number; posts: number }[];
+          topPosts: { _id: string; title: string | null; content: string; platforms: string[]; published_at: string; total_engagement: number; engagement_rate: number; analytics: { likes: number; comments: number; shares: number; impressions: number } }[];
+          profileVsPage: {
+            profile: { posts: number; likes: number; comments: number; shares: number; impressions: number; engagement_rate: number };
+            page:    { posts: number; likes: number; comments: number; shares: number; impressions: number; engagement_rate: number };
+          };
+        };
+      }, { days?: number } | void>({
+        query: (params) => ({ url: "/social/analytics", params: params || {} }),
+        providesTags: ["SocialPost"],
+      }),
+
+      // ── Twitter ───────────────────────────────────────────────────────────
+      getTwitterAuthUrl: builder.query<{ success: boolean; data: { url: string } }, void>({
+        query: () => "/social/twitter/auth-url",
+      }),
     }),
   });
 
 export const {
   useGetSocialAccountsQuery,
   useGetLinkedInAuthUrlQuery,
+  useGetTwitterAuthUrlQuery,
   useDisconnectSocialAccountMutation,
   useRefreshSocialAccountMutation,
   useGetSocialPostsQuery,
@@ -150,4 +189,7 @@ export const {
   usePublishSocialPostMutation,
   useRefreshPostAnalyticsMutation,
   useDeleteSocialPostMutation,
+  useRetryFailedPostMutation,
+  useBulkSchedulePostsMutation,
+  useGetSocialAnalyticsQuery,
 } = socialApi;
