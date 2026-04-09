@@ -333,7 +333,7 @@ const AdLeadSourcesPage = () => {
                         variant="outline"
                         size="sm"
                         className="flex-1 h-9 gap-1.5 rounded-lg font-semibold text-xs border-slate-200 dark:border-(--card-border-color) hover:bg-primary/5 hover:border-primary/30 hover:text-primary transition-all"
-                        onClick={() => router.push(`/ad-leads/sources/${source._id}/automation`)}
+                        onClick={() => router.push(`/ad-leads/${source._id}/automation`)}
                       >
                         <Settings2 size={13} /> Automation
                       </Button>

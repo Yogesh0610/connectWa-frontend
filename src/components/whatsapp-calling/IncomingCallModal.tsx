@@ -39,12 +39,15 @@ function ActiveCallPanel({ call, onEnded }: { call: IncomingCallPayload; onEnded
   useHumanCallAudio(muted ? null : call.waCallId);
 
   const handleHangUp = async () => {
+    // Optimistically close the UI immediately — the server will also emit call:ended
+    // via socket which triggers onEnded in useIncomingCall, but calling it here too
+    // ensures the panel disappears even if the socket event is delayed.
+    onEnded();
     try {
       await rejectCall({ waCallId: call.waCallId, callLogId: call.callLogId }).unwrap();
     } catch {
       // ignore — call may already be terminated on server
     }
-    onEnded();
   };
 
   return (

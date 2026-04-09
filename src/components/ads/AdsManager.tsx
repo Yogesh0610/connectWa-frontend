@@ -341,7 +341,7 @@ const AdsManager = () => {
               { label: "Meta Campaigns",     path: "/ads/meta",             icon: Megaphone,  color: "text-blue-600" },
               { label: "Google Campaigns",   path: "/ads/google",           icon: BarChart3,  color: "text-red-500" },
               { label: "Meta Lead Forms",    path: "/ads/meta/lead-forms",  icon: Users,      color: "text-purple-600" },
-              { label: "Ad Leads Inbox",     path: "/leads_management/ad-leads", icon: TrendingUp, color: "text-emerald-600" },
+              { label: "Ad Leads Inbox",     path: "/ad-leads", icon: TrendingUp, color: "text-emerald-600" },
             ].map((item) => (
               <button key={item.path} onClick={() => router.push(item.path)}
                 className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-slate-50 dark:hover:bg-(--table-hover) transition-colors text-left">

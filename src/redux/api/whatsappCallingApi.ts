@@ -94,7 +94,21 @@ export const whatsappCallingApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: ["WhatsappCallLog"],
     }),
+    answerHumanCall: builder.mutation<any, { waCallId: string; callLogId: string }>({
+      query: (body) => ({
+        url: "/whatsapp/calling/human/answer",
+        method: "POST",
+        body,
+      }),
+    }),
+    rejectHumanCall: builder.mutation<any, { waCallId: string; callLogId: string }>({
+      query: (body) => ({
+        url: "/whatsapp/calling/human/reject",
+        method: "POST",
+        body,
+      }),
+    }),
   }),
 });
 
-export const { useGetCallAgentsQuery, useGetCallAgentByIdQuery, useCreateCallAgentMutation, useUpdateCallAgentMutation, useDeleteCallAgentsMutation, useGetCallLogsQuery, useGetCallLogByIdQuery, useAssignAgentToContactMutation, useAssignAgentBulkMutation, useRemoveAgentFromContactMutation, useRemoveAgentBulkMutation, useGetCallSettingsQuery, useUpdateCallSettingsMutation } = whatsappCallingApi;
+export const { useGetCallAgentsQuery, useGetCallAgentByIdQuery, useCreateCallAgentMutation, useUpdateCallAgentMutation, useDeleteCallAgentsMutation, useGetCallLogsQuery, useGetCallLogByIdQuery, useAssignAgentToContactMutation, useAssignAgentBulkMutation, useRemoveAgentFromContactMutation, useRemoveAgentBulkMutation, useGetCallSettingsQuery, useUpdateCallSettingsMutation, useAnswerHumanCallMutation, useRejectHumanCallMutation } = whatsappCallingApi;

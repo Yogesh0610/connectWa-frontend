@@ -8,14 +8,16 @@ import { socket } from "@/src/services/socket-setup";
  *  - Captures microphone audio and sends raw PCM to the server via socket
  *  - Receives incoming PCM frames from the server and plays them through speakers
  *
- * Audio format expected by @roamhq/wrtc RTCAudioSource: 48 kHz, mono, Int16
+ * Audio path:
+ *   Mic  → getUserMedia → ScriptProcessor(4096) → Int16 → base64 → socket → server → Meta WebRTC
+ *   Meta → server WebRTC → socket → base64 → Int16 → Float32 → AudioBuffer → speaker
  */
 export function useHumanCallAudio(waCallId: string | null) {
   const audioCtxRef = useRef<AudioContext | null>(null);
   const processorRef = useRef<ScriptProcessorNode | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
-  // Schedule outgoing audio frames in order so they don't overlap
   const nextPlayTimeRef = useRef<number>(0);
+  const cleanupSocketRef = useRef<(() => void) | null>(null);
 
   useEffect(() => {
     if (!waCallId) return;
@@ -24,31 +26,44 @@ export function useHumanCallAudio(waCallId: string | null) {
 
     const start = async () => {
       try {
+        // ── Request microphone ────────────────────────────────────────────
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
-        if (!active) {
-          stream.getTracks().forEach((t) => t.stop());
-          return;
-        }
+        if (!active) { stream.getTracks().forEach((t) => t.stop()); return; }
         streamRef.current = stream;
 
+        // ── AudioContext ──────────────────────────────────────────────────
+        // Must be 48 kHz to match what @roamhq/wrtc RTCAudioSource expects
         const audioCtx = new AudioContext({ sampleRate: 48000 });
         audioCtxRef.current = audioCtx;
+
+        // Browsers suspend AudioContext until a user gesture — resume it explicitly
+        if (audioCtx.state === "suspended") {
+          await audioCtx.resume();
+        }
+
         nextPlayTimeRef.current = audioCtx.currentTime;
 
-        // ── Mic capture → socket ──────────────────────────────────────────────
+        // ── Mic capture → socket ──────────────────────────────────────────
         const source = audioCtx.createMediaStreamSource(stream);
-        // 480 samples = 10 ms at 48 kHz (matches wrtc frame size)
-        const processor = audioCtx.createScriptProcessor(480, 1, 1);
+
+        // IMPORTANT: createScriptProcessor only accepts: 256, 512, 1024, 2048, 4096, 8192, 16384
+        // 480 (10 ms @ 48 kHz) is NOT valid and throws IndexSizeError in Chrome.
+        // We use 4096 (~85 ms) and let the server chunk + resample.
+        const processor = audioCtx.createScriptProcessor(4096, 1, 1);
         processorRef.current = processor;
+
+        // Mic gain: 3× boost so the agent's voice reaches the caller at adequate volume.
+        // Clamp prevents clipping. Adjust if too loud.
+        const MIC_GAIN = 3.0;
 
         processor.onaudioprocess = (e) => {
           if (!active) return;
           const float32 = e.inputBuffer.getChannelData(0);
           const int16 = new Int16Array(float32.length);
           for (let i = 0; i < float32.length; i++) {
-            int16[i] = Math.max(-32768, Math.min(32767, Math.round(float32[i] * 32768)));
+            const boosted = Math.max(-1, Math.min(1, float32[i] * MIC_GAIN));
+            int16[i] = Math.round(boosted * 32767);
           }
-          // Encode as base64 and ship to server
           const bytes = new Uint8Array(int16.buffer);
           let binary = "";
           for (let i = 0; i < bytes.byteLength; i++) binary += String.fromCharCode(bytes[i]);
@@ -56,18 +71,25 @@ export function useHumanCallAudio(waCallId: string | null) {
         };
 
         source.connect(processor);
-        // Connect to destination is required for ScriptProcessor to fire even though
-        // we're not actually sending this to the speakers
+        // Must connect to destination for ScriptProcessor to fire (even though output goes to socket)
         processor.connect(audioCtx.destination);
 
-        // ── Server → speaker ──────────────────────────────────────────────────
-        const handleAudio = ({ waCallId: id, pcm, sampleRate }: { waCallId: string; pcm: string; sampleRate: number }) => {
+        // ── Server PCM → speaker ──────────────────────────────────────────
+        const handleAudio = ({
+          waCallId: id,
+          pcm,
+          sampleRate,
+        }: {
+          waCallId: string;
+          pcm: string;
+          sampleRate: number;
+        }) => {
           if (id !== waCallId || !active) return;
 
           const ctx = audioCtxRef.current;
-          if (!ctx) return;
+          if (!ctx || ctx.state === "closed") return;
 
-          // Decode base64 → Int16Array → Float32Array
+          // Decode base64 → bytes → Int16 → Float32
           const binary = atob(pcm);
           const bytes = new Uint8Array(binary.length);
           for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
@@ -83,19 +105,17 @@ export function useHumanCallAudio(waCallId: string | null) {
           bufSource.buffer = buffer;
           bufSource.connect(ctx.destination);
 
-          // Schedule playback so frames play back-to-back without gaps/overlaps
+          // Schedule frames back-to-back so they play gaplessly
           const now = ctx.currentTime;
-          if (nextPlayTimeRef.current < now) nextPlayTimeRef.current = now;
+          if (nextPlayTimeRef.current < now) nextPlayTimeRef.current = now + 0.05; // small buffer
           bufSource.start(nextPlayTimeRef.current);
           nextPlayTimeRef.current += buffer.duration;
         };
 
         socket.on("call:audio:from_contact", handleAudio);
+        cleanupSocketRef.current = () => socket.off("call:audio:from_contact", handleAudio);
 
-        // Store cleanup ref
-        (streamRef.current as any)._cleanup = () => {
-          socket.off("call:audio:from_contact", handleAudio);
-        };
+        console.log("[HumanCallAudio] Audio bridge started for call", waCallId);
       } catch (err) {
         console.error("[HumanCallAudio] Failed to start audio bridge:", err);
       }
@@ -105,15 +125,11 @@ export function useHumanCallAudio(waCallId: string | null) {
 
     return () => {
       active = false;
-
-      if ((streamRef.current as any)?._cleanup) {
-        (streamRef.current as any)._cleanup();
-      }
-
+      cleanupSocketRef.current?.();
+      cleanupSocketRef.current = null;
       streamRef.current?.getTracks().forEach((t) => t.stop());
       processorRef.current?.disconnect();
-      audioCtxRef.current?.close();
-
+      audioCtxRef.current?.close().catch(() => {});
       streamRef.current = null;
       processorRef.current = null;
       audioCtxRef.current = null;

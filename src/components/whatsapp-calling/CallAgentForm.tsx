@@ -25,20 +25,33 @@ interface CallAgentFormProps {
 const CallAgentSchema = Yup.object().shape({
   name: Yup.string().required("Name is required"),
   welcome_message: Yup.string().required("Welcome message is required"),
-  ai_config: Yup.object().shape({
-    api_key: Yup.string().required("AI API Key is required"),
-    prompt: Yup.string().required("System prompt is required"),
+  ai_config: Yup.object().when("agent_type", {
+    is: (v: string) => v !== "human",
+    then: (schema) => schema.shape({
+      api_key: Yup.string().required("AI API Key is required"),
+      prompt: Yup.string().required("System prompt is required"),
+    }),
+    otherwise: (schema) => schema,
   }),
-  voice_config: Yup.object().shape({
-    api_key: Yup.string().required("Voice API Key is required"),
+  voice_config: Yup.object().when("agent_type", {
+    is: (v: string) => v !== "human",
+    then: (schema) => schema.shape({
+      api_key: Yup.string().required("Voice API Key is required"),
+    }),
+    otherwise: (schema) => schema,
   }),
 });
 
-const steps = [
+const AI_STEPS = [
   { id: "identification", title: "Identification", icon: <User size={18} /> },
   { id: "ai", title: "AI Intelligence", icon: <Bot size={18} /> },
   { id: "tools", title: "Functions / Tools", icon: <Code size={18} /> },
   { id: "voice", title: "Voice & STT", icon: <Mic size={18} /> },
+  { id: "connectivity", title: "Connectivity", icon: <PhoneOff size={18} /> },
+];
+
+const HUMAN_STEPS = [
+  { id: "identification", title: "Identification", icon: <User size={18} /> },
   { id: "connectivity", title: "Connectivity", icon: <PhoneOff size={18} /> },
 ];
 
@@ -50,6 +63,10 @@ const CallAgentForm: React.FC<CallAgentFormProps> = ({ agent, onSave, isLoading 
   const formik = useFormik({
     initialValues: {
       name: agent?.name || "",
+      agent_type: (agent as any)?.agent_type || "ai",
+      assigned_user_id: (agent as any)?.assigned_user_id || "",
+      sip_extension: (agent as any)?.sip_extension || "",
+      ring_timeout_seconds: (agent as any)?.ring_timeout_seconds || 30,
       welcome_message: agent?.welcome_message || "",
       ai_config: {
         model_id: agent?.ai_config?.model_id || "gemini-2.0-flash-lite",
@@ -86,6 +103,9 @@ const CallAgentForm: React.FC<CallAgentFormProps> = ({ agent, onSave, isLoading 
     },
   });
 
+  // Re-derive steps from current formik values so toggling type resets the wizard
+  const steps = formik.values.agent_type === "human" ? HUMAN_STEPS : AI_STEPS;
+
   const nextStep = () => {
     setCurrentStep((prev) => Math.min(prev + 1, steps.length - 1));
   };
@@ -93,16 +113,17 @@ const CallAgentForm: React.FC<CallAgentFormProps> = ({ agent, onSave, isLoading 
   const prevStep = () => setCurrentStep((prev) => Math.max(prev - 1, 0));
 
   const renderStep = () => {
-    switch (currentStep) {
-      case 0:
+    const stepId = steps[currentStep]?.id;
+    switch (stepId) {
+      case "identification":
         return <StepIdentification />;
-      case 1:
+      case "ai":
         return <StepAIIntelligence />;
-      case 2:
+      case "tools":
         return <StepFunctions />;
-      case 3:
+      case "voice":
         return <StepVoiceSTT />;
-      case 4:
+      case "connectivity":
         return <StepConnectivity />;
       default:
         return null;
@@ -118,7 +139,7 @@ const CallAgentForm: React.FC<CallAgentFormProps> = ({ agent, onSave, isLoading 
               <ArrowLeft size={20} />
             </Button>
             <div>
-              <h1 className="text-2xl font-bold tracking-tight">{isEditing ? "Edit Call Agent" : "New AI Call Agent"}</h1>
+              <h1 className="text-2xl font-bold tracking-tight">{isEditing ? "Edit Call Agent" : formik.values.agent_type === "human" ? "New Human Agent" : "New AI Call Agent"}</h1>
               <p className="text-sm text-muted-foreground">Follow the steps to configure your voice assistant</p>
             </div>
           </div>
